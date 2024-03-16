@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">AfiqAmjadbinKhairir-Assignment5Question2</string>
+    <string name="language_phrase">Language Phrase</string>
+    <string-array name="languagesSpinner">
+        <item>Japanese</item>
+        <item>Spanish</item>
+        <item>French</item>
+        <item>Mandarin</item>
+    </string-array>
+</resources>
