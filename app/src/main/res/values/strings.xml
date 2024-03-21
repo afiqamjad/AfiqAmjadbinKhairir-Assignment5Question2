@@ -3,7 +3,7 @@
     <string name="language_phrase">Language Phrase</string>
     <string-array name="languagesSpinner">
         <item>Japanese</item>
-        <item>Spanish</item>
+        <item>German</item>
         <item>English</item>
         <item>Mandarin</item>
     </string-array>

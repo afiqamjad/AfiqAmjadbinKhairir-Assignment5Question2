@@ -15,6 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -25,12 +27,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import java.util.*
 import kotlin.math.sqrt
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
+class MainActivity : AppCompatActivity(), SensorEventListener, TextToSpeech.OnInitListener {
+
+    private val TAG = "MainActivity"
 
     private lateinit var speechRecognizer: SpeechRecognizer
     private lateinit var recognizerIntent: Intent
     private lateinit var sensorManager: SensorManager
     private lateinit var selectedLanguage: String
+    private lateinit var textToSpeech: TextToSpeech
     private var accelerometer: Sensor? = null
     private val shakethreshold = 10f
     private var lastX: Float = 0f
@@ -55,18 +60,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private val languageCodeMap = mapOf(
         "Japanese" to "ja",
-        "Spanish" to "es",
-        "Mandarin" to "zh-CN",
-        "English" to "en-US"
+        "German" to "de",
+        "Mandarin" to "zh",
+        "English" to "en"
     )
 
     private val vacationSpots = mapOf(
         "Paris" to listOf("French"),
         "Tokyo" to listOf("Japanese"),
-        "Barcelona" to listOf("Spanish", "Catalan"),
-        "Rome" to listOf("Italian"),
-        "Rio de Janeiro" to listOf("Portuguese"),
-        "New York City" to listOf("English")
+        "Berlin" to listOf("German"),
+        "Beijing" to listOf("Mandarin"),
+        "New York City" to listOf("English"),
+        "Kyoto" to listOf("Japanese")
     )
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +114,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 if (spinnerUsed) {
                     selectedLanguage = parent.getItemAtPosition(position) as String
                     startSpeechRecognition(languageCodeMap[selectedLanguage] ?: "")
+                    initializeTextToSpeech()
                 } else {
                     spinnerUsed = true // Set the flag to true after the Spinner is used once
                 }
@@ -152,11 +158,37 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    private fun initializeTextToSpeech() {
+        if (::textToSpeech.isInitialized) {
+            textToSpeech.stop()
+            textToSpeech.shutdown()
+        }
+        textToSpeech = TextToSpeech(this@MainActivity, this@MainActivity)
+    }
+
     override fun onPause() {
         super.onPause()
         sensorManager.unregisterListener(this)
     }
+    override fun onDestroy() {
+        // Shutdown TextToSpeech when the activity is destroyed
+        textToSpeech.stop()
+        textToSpeech.shutdown()
+        super.onDestroy()
+    }
 
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            // Set language for TextToSpeech
+            val result = textToSpeech.setLanguage(Locale(selectedLanguage)) // Assuming selectedLanguage is a valid language code
+
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e(TAG, "Language not supported")
+            }
+        } else {
+            Log.e(TAG, "Initialization failed")
+        }
+    }
     override fun onSensorChanged(event: SensorEvent) {
         val currentUpdateTime = System.currentTimeMillis()
         val timeInterval = currentUpdateTime - lastUpdate
@@ -199,8 +231,28 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$randomSpot"))
         intent.setPackage("com.google.android.apps.maps")
         intent.resolveActivity(packageManager)?.let {
+            speakHello(selectedLanguage)
             startActivity(intent)
         }
+    }
+
+    private fun speakHello(language: String) {
+        val locale = Locale(languageCodeMap[language] ?: "")
+        val helloText = getHelloTextInLanguage(locale)
+        textToSpeech.speak(helloText, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    @SuppressLint("DiscouragedApi")
+    private fun getHelloTextInLanguage(locale: Locale): String {
+        val helloText = when (locale.language) {
+            Locale.ENGLISH.language -> "Hello"
+            Locale.FRENCH.language -> "Bonjour"
+            Locale.SIMPLIFIED_CHINESE.language -> "你好"
+            Locale.GERMAN.language -> "Hallo"
+            Locale.JAPANESE.language -> "こんにちは"
+            else -> "Hello" // Default to "Hello" for unsupported languages
+        }
+        return helloText
     }
     private fun startSpeechRecognition(language: String) {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
