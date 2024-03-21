@@ -4,7 +4,7 @@
     <string-array name="languagesSpinner">
         <item>Japanese</item>
         <item>Spanish</item>
-        <item>French</item>
+        <item>English</item>
         <item>Mandarin</item>
     </string-array>
 </resources>
