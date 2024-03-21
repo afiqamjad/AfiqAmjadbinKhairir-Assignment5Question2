@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private lateinit var selectedLanguage: String
     private var accelerometer: Sensor? = null
-    private val SHAKE_THRESHOLD = 10f // Adjust this value according to sensitivity
+    private val shakethreshold = 10f
     private var lastX: Float = 0f
     private var lastY: Float = 0f
     private var lastZ: Float = 0f
@@ -176,7 +176,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         lastZ = z
 
         val speed = sqrt((deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ).toDouble()) / timeInterval * 10000
-        if (speed > SHAKE_THRESHOLD) {
+        if (speed > shakethreshold) {
             // Shake gesture detected
             launchGoogleMaps()
         }
@@ -186,7 +186,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Not used
     }
 
-    @SuppressLint("QueryPermissionsNeeded")
     private fun launchGoogleMaps() {
 
         // Retrieve vacation spot locations associated with the selected language
@@ -199,10 +198,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Launch Google Maps with the chosen location
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$randomSpot"))
         intent.setPackage("com.google.android.apps.maps")
-        if (intent.resolveActivity(packageManager) != null) {
+        intent.resolveActivity(packageManager)?.let {
             startActivity(intent)
-        } else {
-            Toast.makeText(this, "Google Maps not installed", Toast.LENGTH_SHORT).show()
         }
     }
     private fun startSpeechRecognition(language: String) {
